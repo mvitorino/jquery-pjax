@@ -24,11 +24,11 @@
 //
 // Returns the jQuery object
 $.fn.pjax = function( container, options ) {
-  options = optionsFor(container, options)
+  options = optionsFor(container, options);
   return this.live('click', function(event){
-    return handleClick(event, options)
-  })
-}
+    return handleClick(event, options);
+  });
+};
 
 // Public: pjax on click handler
 //
@@ -50,23 +50,23 @@ $.fn.pjax = function( container, options ) {
 //
 // Returns false if pjax runs, otherwise nothing.
 function handleClick(event, container, options) {
-  options = optionsFor(container, options)
+  options = optionsFor(container, options);
 
-  var link = event.currentTarget
+  var link = event.currentTarget;
 
   // Middle click, cmd click, and ctrl click should open
   // links in a new tab as normal.
   if ( event.which > 1 || event.metaKey )
-    return
+    return;
 
   // Ignore cross origin links
   if ( location.protocol !== link.protocol || location.host !== link.host )
-    return
+    return;
 
   // Ignore anchors on the same page
   if ( link.hash && link.href.replace(link.hash, '') ===
        location.href.replace(location.hash, '') )
-    return
+    return;
 
   var defaults = {
     url: link.href,
@@ -74,12 +74,12 @@ function handleClick(event, container, options) {
     target: link,
     clickedElement: $(link), // DEPRECATED: use target
     fragment: null
-  }
+  };
 
-  $.pjax($.extend({}, defaults, options))
+  $.pjax($.extend({}, defaults, options));
 
-  event.preventDefault()
-  return false
+  event.preventDefault();
+  return false;
 }
 
 // Internal: Strips _pjax=true param from url
@@ -91,7 +91,7 @@ function stripPjaxParam(url) {
   return url
     .replace(/\?_pjax=true&?/, '?')
     .replace(/_pjax=true&?/, '')
-    .replace(/\?$/, '')
+    .replace(/\?$/, '');
 }
 
 // Internal: Parse URL components and returns a Locationish object.
@@ -100,9 +100,9 @@ function stripPjaxParam(url) {
 //
 // Returns HTMLAnchorElement that acts like Location.
 function parseURL(url) {
-  var a = document.createElement('a')
-  a.href = url
-  return a
+  var a = document.createElement('a');
+  a.href = url;
+  return a;
 }
 
 
@@ -126,112 +126,117 @@ function parseURL(url) {
 //
 // Returns whatever $.ajax returns.
 var pjax = $.pjax = function( options ) {
-  options = $.extend(true, {}, $.ajaxSettings, pjax.defaults, options)
+  options = $.extend(true, {}, $.ajaxSettings, pjax.defaults, options);
 
   if ($.isFunction(options.url)) {
-    options.url = options.url()
+    options.url = options.url();
   }
 
-  var target = options.target
+  var target = options.target;
 
   // DEPRECATED: use options.target
-  if (!target && options.clickedElement) target = options.clickedElement[0]
+  if (!target && options.clickedElement) target = options.clickedElement[0];
 
-  var url  = options.url
-  var hash = parseURL(url).hash
+  var url  = options.url;
+  var hash = parseURL(url).hash;
 
   // DEPRECATED: Save references to original event callbacks. However,
   // listening for custom pjax:* events is prefered.
   var oldBeforeSend = options.beforeSend,
       oldComplete   = options.complete,
       oldSuccess    = options.success,
-      oldError      = options.error
+      oldError      = options.error;
 
-  var context = options.context = findContainerFor(options.container)
+  var context = options.context = findContainerFor(options.container);
 
   function fire(type, args) {
-    var event = $.Event(type, { relatedTarget: target })
-    context.trigger(event, args)
-    return !event.isDefaultPrevented()
+    var event = $.Event(type, { relatedTarget: target });
+    context.trigger(event, args);
+    return !event.isDefaultPrevented();
   }
 
-  var timeoutTimer
+  var timeoutTimer;
 
   options.beforeSend = function(xhr, settings) {
-    url = stripPjaxParam(settings.url)
+    url = stripPjaxParam(settings.url);
 
     if (settings.timeout > 0) {
       timeoutTimer = setTimeout(function() {
         if (fire('pjax:timeout', [xhr, options]))
-          xhr.abort('timeout')
-      }, settings.timeout)
+          xhr.abort('timeout');
+      }, settings.timeout);
 
       // Clear timeout setting so jquerys internal timeout isn't invoked
-      settings.timeout = 0
+      settings.timeout = 0;
     }
 
-    xhr.setRequestHeader('X-PJAX', 'true')
+    xhr.setRequestHeader('X-PJAX', 'true');
 
-    var result
+    var result;
 
     // DEPRECATED: Invoke original `beforeSend` handler
     if (oldBeforeSend) {
-      result = oldBeforeSend.apply(this, arguments)
-      if (result === false) return false
+      result = oldBeforeSend.apply(this, arguments);
+      if (result === false) 
+        return false;
     }
 
-    if (!fire('pjax:beforeSend', [xhr, settings])) return false
+    if (!fire('pjax:beforeSend', [xhr, settings])) 
+      return false;
 
-    fire('pjax:start', [xhr, options])
+    fire('pjax:start', [xhr, options]);
     // start.pjax is deprecated
-    fire('start.pjax', [xhr, options])
-  }
+    fire('start.pjax', [xhr, options]);
+  };
 
   options.complete = function(xhr, textStatus) {
     if (timeoutTimer)
-      clearTimeout(timeoutTimer)
+      clearTimeout(timeoutTimer);
 
     // DEPRECATED: Invoke original `complete` handler
-    if (oldComplete) oldComplete.apply(this, arguments)
+    if (oldComplete) 
+      oldComplete.apply(this, arguments);
 
-    fire('pjax:complete', [xhr, textStatus, options])
+    fire('pjax:complete', [xhr, textStatus, options]);
 
-    fire('pjax:end', [xhr, options])
+    fire('pjax:end', [xhr, options]);
     // end.pjax is deprecated
-    fire('end.pjax', [xhr, options])
-  }
+    fire('end.pjax', [xhr, options]);
+  };
 
   options.error = function(xhr, textStatus, errorThrown) {
-    var respUrl = xhr.getResponseHeader('X-PJAX-URL')
-    if (respUrl) url = stripPjaxParam(respUrl)
+    var respUrl = xhr.getResponseHeader('X-PJAX-URL');
+    if (respUrl) 
+      url = stripPjaxParam(respUrl);
 
     // DEPRECATED: Invoke original `error` handler
-    if (oldError) oldError.apply(this, arguments)
+    if (oldError) 
+      oldError.apply(this, arguments);
 
-    var allowed = fire('pjax:error', [xhr, textStatus, errorThrown, options])
+    var allowed = fire('pjax:error', [xhr, textStatus, errorThrown, options]);
     if (textStatus !== 'abort' && allowed)
-      window.location = url
-  }
+      window.location = url;
+  };
 
   options.success = function(data, status, xhr) {
-    var respUrl = xhr.getResponseHeader('X-PJAX-URL')
-    if (respUrl) url = stripPjaxParam(respUrl)
+    var respUrl = xhr.getResponseHeader('X-PJAX-URL');
+    if (respUrl) url = stripPjaxParam(respUrl);
 
-    var title, oldTitle = document.title
+    var title, oldTitle = document.title;
 
     if ( options.fragment ) {
       // If they specified a fragment, look for it in the response
       // and pull it out.
-      var html = $('<html>').html(data)
-      var $fragment = html.find(options.fragment)
+      var html = $('<html>').html(data);
+      var $fragment = html.find(options.fragment);
       if ( $fragment.length ) {
-        this.html($fragment.contents())
+        this.html($fragment.contents());
 
         // If there's a <title> tag in the response, use it as
         // the page's title. Otherwise, look for data-title and title attributes.
-        title = html.find('title').text() || $fragment.attr('title') || $fragment.data('title')
+        title = html.find('title').text() || $fragment.attr('title') || $fragment.data('title');
       } else {
-        return window.location = url
+        return window.location = url;
       }
     } else {
       // If we got no data or an entire web page, go directly
